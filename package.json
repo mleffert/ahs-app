@@ -6,14 +6,17 @@
     "start": "node ./bin/www"
   },
   "dependencies": {
+    "ahs-persistence": "git+ssh://git@github.com/mleffert/ahs-persistence.git",
+    "axios": "0.18.0",
     "cookie-parser": "~1.4.3",
     "cors": "2.8.4",
     "debug": "~2.6.9",
     "express": "~4.16.0",
     "http-errors": "~1.6.2",
+    "jsonwebtoken": "8.3.0",
     "lodash": "4.17.10",
     "morgan": "~1.9.0",
     "passport": "0.4.0",
-    "passport-google-oauth2": "0.1.6"
+    "passport-google-oauth": "1.0.0"
   }
 }

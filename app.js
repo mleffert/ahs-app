@@ -5,7 +5,11 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var cors = require('cors');
 var passport = require('passport');
-var GoogleStrategy   = require( 'passport-google-oauth2' ).Strategy;
+var GoogleStrategy   = require( 'passport-google-oauth' ).OAuth2Strategy;
+var db = require('ahs-persistence').actions;
+var GoogleInfo = require('./helpers/GoogleHelpers');
+var request = require('./helpers/requestWrapper');
+const edebug  = require( 'debug' )( 'apis:error' );
 
 var app = express();
 app.use(cors());
@@ -15,8 +19,14 @@ passport.use(new GoogleStrategy({
     clientSecret: process.env.ClientSecret,
     callbackURL: "http://localhost:3000/auth/callback",
     passReqToCallback:true
-}, (request, accessToken, refreshToken, profile, done)=> {
-    console.log(profile);
+},  async (request, accessToken, refreshToken, profile, done) => {
+
+    var person = await db.UserActions.VerifyUserOrCreate(await new GoogleInfo(profile, accessToken).getEmail());
+    if(person){
+        return done(null, person);
+    } else {
+        return done();
+    }
 }))
 
 app.use( passport.initialize() );
@@ -31,20 +41,32 @@ app.use(express.static(path.join(__dirname, 'public')));
 require('./routes')(app);
 
 
-// catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  next(createError(404));
+// Response Unifier and 404 handler
+app.use((req, res, next) => {
+    if (!res.isRoute) {
+        next(error(404, 'Route Not Found'));
+    }
+    const data = res.locals;
+    const ret = {
+        status: res.statusCode,
+        data
+    };
+    res.send(ret);
 });
 
-// error handler
-app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
 
-  // render the error page
-  res.status(err.status || 500);
-  res.send(err);
+app.use( (err, req, res, next ) => {
+    edebug({
+        error: err.message,
+        stack: err.stack.split( '\n' )
+    });
+
+    res.status( err.statusCode || 500 ).send({
+        status: err.statusCode,
+        error: err.message,
+        stack: global.isProd ? undefined : err.stack.split( '\n' )
+    });
 });
+
 
 module.exports = app;
