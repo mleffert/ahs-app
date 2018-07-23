@@ -6,9 +6,9 @@ var logger = require('morgan');
 var cors = require('cors');
 var passport = require('passport');
 var GoogleStrategy   = require( 'passport-google-oauth' ).OAuth2Strategy;
-var db = require('ahs-persistence').actions;
-var GoogleInfo = require('./helpers/GoogleHelpers');
-var request = require('./helpers/requestWrapper');
+var db = require('ahs-persistence');
+var GoogleInfo = require('./helpers/GoogleHelpers').GoogleInfo;
+var request = require('./middleware/RequestWrapper');
 const edebug  = require( 'debug' )( 'apis:error' );
 
 var app = express();
@@ -20,8 +20,8 @@ passport.use(new GoogleStrategy({
     callbackURL: "http://localhost:3000/auth/callback",
     passReqToCallback:true
 },  async (request, accessToken, refreshToken, profile, done) => {
-
-    var person = await db.UserActions.VerifyUserOrCreate(await new GoogleInfo(profile, accessToken).getEmail());
+    var pers = await db.user.findAll();
+    var person = await db.user.VerifyUserOrCreate(await new GoogleInfo(profile, accessToken).getEmail());
     if(person){
         return done(null, person);
     } else {

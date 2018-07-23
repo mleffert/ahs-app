@@ -1,5 +1,3 @@
-
-
 var axios = require('axios').create({baseURL:'https://www.googleapis.com/gmail/v1/'});
 
 function GoogleInfo(profile, accessToken){
@@ -10,7 +8,7 @@ function GoogleInfo(profile, accessToken){
 }
 
 GoogleInfo.prototype.getEmail = async function(){
-    var {data} =  await axios.get(`users/${this.id}/profile`,{
+    let {data} =  await axios.get(`users/${this.id}/profile`,{
         params:{
             oauth_token: this.accessToken
         }
@@ -19,4 +17,27 @@ GoogleInfo.prototype.getEmail = async function(){
     return this;
 }
 
-module.exports = GoogleInfo;
+
+
+module.exports.GoogleInfo = GoogleInfo;
+
+module.exports.GetClasses = async function( userInfo ){
+    let params = {
+        oauth_token: userInfo.accessToken,
+        courseStates:'ACTIVE'
+    }
+    if(userInfo.isTeacher){
+        params.teacherId = 'me'
+    } else {
+        params.studentId = 'me'
+    }
+    var {data} = await axios.get('courses',{
+        params
+    })
+    return data;
+}
+
+module.exports.GetStudentsForClass = async function(classId){
+    let {data} = await axios.get(`courses/${classId}/students`);
+    return data;
+}
